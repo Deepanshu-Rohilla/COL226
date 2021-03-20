@@ -1,0 +1,13 @@
+statement ::= formula terminal 
+formula ::= left_paren formula right_paren | prefix_unary formula | IF formula THEN formula ELSE formula  | constants
+terminal ::= ";" .
+constants ::= TRUE | FALSE .
+operator ::=  infix_binary | implication .
+prefix_unary ::= NOT .
+infix_binary ::= AND | OR | XOR | EQUALS .
+implication ::= IMPLIES .
+left_paren ::= "(" .
+right_paren ::= ")" .
+if ::= IF .
+then ::= THEN .
+else ::= ELSE .
