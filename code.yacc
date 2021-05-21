@@ -7,11 +7,13 @@ fun lookup "special" = 1000
 %name code
 
 %term
-  ID of string 
-| OR | AND | NOT | XOR  | RPAREN | LPAREN | IMPLIES 
-| IF | THEN | ELSE | EQUALS | TRUE  | FALSE  | TERMINAL  | EOF
+  ID of string | NUM of int
+| OR | AND | NOT | XOR  | RPAREN | LPAREN | IMPLIES | PLUS | MINUS | NEGATE | LESSTHAN | GREATERTHAN
+| IF | THEN | ELSE | EQUALS | TRUE  | FALSE  | TERMINAL  | EOF | FI | LET | IN | END | TIMES | FN | FUN
+| VAL  | EQ | INT | BOOL | COLON | ARROW
 
-%nonterm FORMULA of AST.exp | STATEMENT of AST.exp |  START of AST.exp | PROGRAM of AST.exp
+%nonterm EXP of AST.exp | STATEMENT of AST.exp |  START of AST.exp 
+| PROGRAM of AST.exp | DECL of AST.decl | TYPE of AST.type1
 
 %pos int
 
@@ -22,10 +24,13 @@ fun lookup "special" = 1000
 (* %header  *)
 
 
-%right IF THEN ELSE
+%right IF THEN ELSE FI LET IN END 
+%left FN FUN ARROW
 %right IMPLIES 
-%left AND OR  XOR EQUALS
-%right NOT
+%left AND OR XOR EQUALS LESSTHAN GREATERTHAN
+%left PLUS MINUS 
+%left TIMES 
+%right NOT NEGATE
 
 %start START
 
@@ -33,18 +38,32 @@ fun lookup "special" = 1000
 
 %%
 START: PROGRAM (PROGRAM1)
+DECL:  ID EQ EXP (AST.ValDecl(ID, EXP))
+TYPE: INT (AST.INT) | BOOL (AST.BOOL) | TYPE ARROW TYPE (AST.ARROW(TYPE1,TYPE2)) 
 PROGRAM:      STATEMENT (STATEMENT1)
         | STATEMENT PROGRAM (AST.CombExp(STATEMENT, PROGRAM))
-    STATEMENT : FORMULA TERMINAL ((AST.TermExp(FORMULA1, AST.TERMINAL)))
+    STATEMENT : EXP TERMINAL ((AST.TermExp(EXP1, AST.TERMINAL)))
 
-    FORMULA: LPAREN FORMULA RPAREN ((AST.ParenExp(AST.LPAREN, FORMULA1, AST.RPAREN)))
-            |IF FORMULA THEN FORMULA ELSE FORMULA  ((AST.ConditionExp(FORMULA1, FORMULA2, FORMULA3)))
-            | FORMULA AND FORMULA  (AST.BinExp(AST.AND, FORMULA1,  FORMULA2))
-            | FORMULA OR FORMULA  (AST.BinExp(AST.OR, FORMULA1,  FORMULA2))
-            | FORMULA XOR FORMULA (AST.BinExp(AST.XOR, FORMULA1,  FORMULA2))
-            | TRUE (AST.Const(AST.TRUE))
-            | FALSE (AST.Const(AST.FALSE))
-            | FORMULA EQUALS FORMULA (AST.BinExp(AST.EQUALS, FORMULA1,  FORMULA2))
-            | FORMULA IMPLIES FORMULA (AST.BinExp(AST.IMPLIES, FORMULA1,  FORMULA2))
-            | NOT FORMULA (AST.UnExp(AST.NOT, FORMULA1))
+    EXP: LPAREN EXP RPAREN ((AST.ParenExp(AST.LPAREN, EXP1, AST.RPAREN)))
+            | IF EXP THEN EXP ELSE EXP FI ((AST.ConditionExp(EXP1, EXP2, EXP3)))
+            | EXP AND EXP  (AST.BinExp(AST.AND, EXP1,  EXP2))
+            | EXP OR EXP  (AST.BinExp(AST.OR, EXP1,  EXP2))
+            | EXP XOR EXP (AST.BinExp(AST.XOR, EXP1,  EXP2))
+            | TRUE (AST.BExp(true))
+            | FALSE (AST.BExp(false))
+            | EXP PLUS EXP (AST.BinExp(AST.PLUS, EXP1,  EXP2))
+            | EXP MINUS EXP (AST.BinExp(AST.MINUS, EXP1,  EXP2))
+            | EXP TIMES EXP (AST.BinExp(AST.TIMES, EXP1,  EXP2))
+            | NUM (AST.NExp(NUM1))
+            | EXP EQUALS EXP (AST.BinExp(AST.EQUALS, EXP1,  EXP2))
+            | EXP GREATERTHAN EXP (AST.BinExp(AST.GREATERTHAN, EXP1,  EXP2))
+            | EXP LESSTHAN EXP (AST.BinExp(AST.LESSTHAN, EXP1,  EXP2))
+            | EXP IMPLIES EXP (AST.BinExp(AST.IMPLIES, EXP1,  EXP2))
+            | NOT EXP (AST.UnExp(AST.NOT, EXP1))
+            | NEGATE EXP (AST.UnExp(AST.NEGATE, EXP1))
+            | LET DECL IN EXP END (AST.LetExp(DECL, EXP))
+            | ID (AST.VarExp(ID1))
+            | FN LPAREN ID COLON TYPE RPAREN COLON TYPE ARROW EXP (AST.FnExp(ID1,TYPE1,TYPE2,EXP1))
+            | FUN ID LPAREN ID COLON TYPE RPAREN COLON TYPE ARROW EXP (AST.FunExp(ID1,ID2,TYPE1,TYPE2,EXP1))
+            | LPAREN ID EXP RPAREN (AST.AppExp(ID1, EXP1))
 

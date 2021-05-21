@@ -6,8 +6,11 @@ structure codeParser =
      	       structure Lex = codeLex)
      
 fun invoke lexstream =
-    	     	let fun print_error (s,line,col) =
-				raise parseErr("Syntax error at line "^Int.toString(line) ^  ":" ^ Int.toString(col) ^ " s")
+    	     	let fun print_error (s,line,col) = (
+					 print("Syntax error at line "^Int.toString(line) ^  ":" ^ Int.toString(col) ^ s);
+					 raise parseErr("Syntax error at line "^Int.toString(line) ^  ":" ^ Int.toString(col) ^ s)
+				 )
+				
 		in
 		    codeParser.parse(0,lexstream,print_error,())
 		end
